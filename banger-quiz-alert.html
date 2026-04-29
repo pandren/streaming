@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banger Quiz Alert</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- The only job of this page: play a sound when Banger Quiz appears in chat -->
+
+<audio id="quiz-alert" preload="auto">
+  <source src="https://raw.githubusercontent.com/pandren/streaming/main/notification/BangerQuiz.m4a" type="audio/mp4">
+</audio>
+
+<script>
+  const audio = document.getElementById('quiz-alert');
+
+  // Connect to Twitch chat via anonymous IRC over WebSocket
+  const CHANNEL = 'djpeterandren';
+  const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+  ws.onopen = function() {
+    ws.send('PASS SCHMOOPIIE');
+    ws.send('NICK justinfan12345');
+    ws.send('JOIN #' + CHANNEL);
+  };
+
+  ws.onmessage = function(event) {
+    const raw = event.data;
+
+    // Keep connection alive
+    if (raw.startsWith('PING')) {
+      ws.send('PONG :tmi.twitch.tv');
+      return;
+    }
+
+    // Watch for Banger Quiz message in chat
+    if (raw.includes('PRIVMSG') && raw.includes('🎵 Banger Quiz!')) {
+      audio.currentTime = 0;
+      audio.play().catch(function(e) {
+        console.log('Playback error:', e);
+      });
+    }
+  };
+
+  ws.onerror = function(e) {
+    console.log('WebSocket error:', e);
+  };
+
+  ws.onclose = function() {
+    // Reconnect after 5 seconds if disconnected
+    setTimeout(function() { location.reload(); }, 5000);
+  };
+</script>
+
+</body>
+</html>
